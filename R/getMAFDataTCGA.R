@@ -1,67 +1,6 @@
 ## To Supress Note
 utils::globalVariables(c(".", "..mycols","..tcga_pheno_columns","tempdir","heat.colors","topo.colors"))
 
-#' Function to extract the mutation data in MAF format from TCGA
-#' @description This function download and extract the mutation
-#'  data in MAF format from TCGA.
-#' @author Mayank Tandon, Ashish Jain
-#' @param cancerCodes A character vector of TCGA cancer codes
-#' @param outputFolder path of the file containing the mutation
-#' information in the MAF format
-#' @param variant_caller type of variant caller in TCGA
-#' @export
-#' @return A vector containing the path of the downloaded mutation annotation files
-#'
-#' @examples
-#' library(MAFDash)
-#' cancerCodes <- c("ACC","THCA")
-#' outputFolderPath <- tempdir()
-#' #maf <- getMAFdataTCGA(cancerCodes = cancerCodes,outputFolder = outputFolderPath)
-#' @importFrom TCGAbiolinks GDCquery_Maf
-#' @importFrom ensurer ensure_that
-#' @importFrom dplyr mutate group_by
-
-getMAFdataTCGA<-function(cancerCodes=c("ACC"),outputFolder=tempdir(),variant_caller="mutect2"){
-
-  cancerCodes <- ensurer::ensure_that(cancerCodes,
-                                   !is.null(.) && (class(.) == "character") && all(. %in% TCGAbiolinks::getGDCprojects()$tumor),
-                                   err_desc = "Please enter the correct TCGA cancer code. See TCGAbiolinks::getGDCprojects().")
-  variant_caller <- ensurer::ensure_that(variant_caller,
-                                     !is.null(.) && (class(.) == "character"),
-                                     err_desc = "Please enter the variant caller type in correct format.")
-
-  tcga_maf_file_list<-c()
-  for(cancerCode in cancerCodes)
-  {
-    outputFolder=file.path(outputFolder,paste0("TCGA_",cancerCode),variant_caller)
-    tcga_maf_file=file.path(outputFolder,paste0("TCGA_",cancerCode,".",variant_caller,".maf"))
-
-    if (!file.exists(tcga_maf_file)) {
-      if(!dir.exists(outputFolder)) {dir.create(outputFolder, recursive = TRUE)}
-      tcga_maf <- TCGAbiolinks::GDCquery_Maf(gsub("TCGA-","",cancerCode),pipelines = variant_caller,directory = outputFolder)
-      tcga_maf$Tumor_Sample_Barcode_original <- tcga_maf$Tumor_Sample_Barcode
-      tcga_maf$Tumor_Sample_Barcode <-unlist(lapply(strsplit(tcga_maf$Tumor_Sample_Barcode, "-"), function(x) {paste0(x[1:3], collapse="-")}))
-      tcga_maf$caller <- variant_caller
-      write.table(tcga_maf, file=tcga_maf_file, quote=FALSE, sep="\t", row.names = FALSE, col.names = TRUE)
-    }
-    tcga_maf_file_list<-c(tcga_maf_file_list,tcga_maf_file)
-  }
-  # tcga_clinical_file=file.path(outputFolder,paste0("TCGA_",cancerCode,".clinical.txt"))
-  # if (! file.exists(tcga_clinical_file)) {
-  #   if (!dir.exists(dirname(tcga_clinical_file))) {dir.create(dirname(tcga_clinical_file), recursive = T)}
-  #   tcga_clinical <- GDCquery_clinic(project = paste0("TCGA-",cancerCode), type = "clinical")
-  #   write.table(tcga_clinical, file=tcga_clinical_file, quote=T, sep="\t", row.names = F, col.names = T)
-  # }
-  #
-  #
-  # tcga_clin_data <- read.table(tcga_clinical_file, sep="\t",header = T,stringsAsFactors = F)
-  # tcga_clin_data$Tumor_Sample_Barcode <- tcga_clin_data$bcr_patient_barcode
-  # tcga_maf <- read.maf(tcga_maf_file, clinicalData = tcga_clin_data)
-  #return(list("MAFFilePath"=tcga_maf_file,"MAFObject"=tcga_maf))
-  return(tcga_maf_file_list)
-}
-
-
 #' Function to extract the clinical annotations from TCGA
 #' @description This function download and extract the clinical
 #' annotations from TCGA.
