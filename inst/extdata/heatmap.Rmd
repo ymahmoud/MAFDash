@@ -1,7 +1,7 @@
 
 ### Interactive Heatmap
 ```{r make-interactive-heatmap, fig.width=12, fig.height=8  }
-snp_mat <- mutCountMatrix(maf = maf)
+snp_mat <- as.data.frame(mutCountMatrix(maf = maf))
 snp_mat$total <- rowSums(snp_mat)
 snp_mat <- snp_mat[with(snp_mat,order(-total)),]
 snp_mat <- snp_mat[1:50,]
